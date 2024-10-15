@@ -13,6 +13,20 @@
                         Dashboard
                     </a>
                 </li>
+                @if (Auth::user()->role === 'admin')
+                    <li>
+                        <a href="{{ route('pengguna') }}" class="{!! preg_match('#^dashboard/pengguna.*#', Request::path()) ? 'active' : '' !!}">
+                            <x-lucide-users class="h-5 w-5 mr-2" />
+                            Pengguna
+                        </a>
+                    </li>
+                @endif
+                <li>
+                    <a href="{{ route('pengguna') }}" class="{!! preg_match('#^dashboard/pengguna.*#', Request::path()) ? 'active' : '' !!}">
+                        <x-lucide-users class="h-5 w-5 mr-2" />
+                        Pengguna
+                    </a>
+                </li>
                 <li>
                     <a href="{{ route('surat_masuk') }}" class="{!! preg_match('#^dashboard/suratmasuk.*#', Request::path()) ? 'active' : '' !!}">
                         <x-lucide-mail class="h-5 w-5 mr-2" />
@@ -52,6 +66,14 @@
                     Dashboard
                 </a>
             </li>
+            @if (Auth::user()->role === 'admin')
+                <li>
+                    <a href="{{ route('pengguna') }}" class="{!! preg_match('#^dashboard/pengguna.*#', Request::path()) ? 'active' : '' !!}">
+                        <x-lucide-users class="h-5 w-5 mr-2" />
+                        Pengguna
+                    </a>
+                </li>
+            @endif
             <li>
                 <a href="{{ route('surat_masuk') }}" class="{!! preg_match('#^dashboard/suratmasuk.*#', Request::path()) ? 'active' : '' !!}">
                     <x-lucide-mail class="h-5 w-5 mr-2" />

@@ -1,13 +1,14 @@
 <?php
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\SuratMasukController;
 use App\Http\Controllers\SuratKeluarController;
 use App\Http\Controllers\ProposalMasukController;
 use App\Http\Controllers\ProposalKeluarController;
-use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,11 @@ Route::middleware(['auth'])->group(function () {
             'today' => $today,
         ]);
     })->name('dashboard');
+
+    Route::get('dashboard/pengguna', [PenggunaController::class, 'index'])->name('pengguna');
+    Route::post('dashboard/pengguna/store', [PenggunaController::class, 'store'])->name('store.pengguna');
+    Route::put('dashboard/pengguna/{id}/update', [PenggunaController::class, 'update'])->name('update.pengguna');
+    Route::delete('dashboard/pengguna/{id}/delete', [PenggunaController::class, 'destroy'])->name('delete.pengguna');
 
     Route::get('dashboard/suratmasuk', [SuratMasukController::class, 'index'])->name('surat_masuk');
     Route::post('dashboard/suratmasuk/store', [SuratMasukController::class, 'store'])->name('store.surat_masuk');

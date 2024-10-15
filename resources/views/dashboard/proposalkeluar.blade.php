@@ -89,24 +89,28 @@
                                             <x-lucide-scan-eye class="size-5 hover:stroke-green-500 cursor-pointer"
                                                 aria-label="Preview Proposal"
                                                 onclick="document.getElementById('preview_modal_{{ $item->id }}').showModal();" />
-                                        
-                                            <dialog id="preview_modal_{{ $item->id }}" class="modal modal-bottom sm:modal-middle">
+
+                                            <dialog id="preview_modal_{{ $item->id }}"
+                                                class="modal modal-bottom sm:modal-middle">
                                                 <div class="modal-box bg-neutral text-white">
-                                                    <h3 class="text-lg font-bold" id="modal-title">{{ $item->no_urut }}</h3>
-                                                    <div class="flex flex-col w-full mt-3 rounded-lg overflow-hidden h-96">
-                                                        @if ($item->file)
-                                                            <embed src="{{ asset('storage/proposal_keluar/' . $item->file) }}" type="application/pdf" class="w-full h-full" />
-                                                        @else
-                                                            <p class="text-red-500">File tidak ditemukan.</p>
-                                                        @endif
+                                                    <h3 class="text-lg font-bold" id="modal-title">{{ $item->no_urut }}
+                                                    </h3>
+                                                    <div
+                                                        class="flex flex-col w-full mt-3 rounded-lg overflow-hidden h-96">
+                                                        <embed
+                                                            src="{{ asset('storage/proposal_keluar/' . $item->file) }}"
+                                                            type="application/pdf" class="w-full h-full" />
+
                                                     </div>
                                                     <div class="modal-action">
-                                                        <button type="button" onclick="document.getElementById('preview_modal_{{ $item->id }}').close()" class="btn">Tutup</button>
+                                                        <button type="button"
+                                                            onclick="document.getElementById('preview_modal_{{ $item->id }}').close()"
+                                                            class="btn">Tutup</button>
                                                     </div>
                                                 </div>
                                             </dialog>
                                         </td>
-                                        
+
                                         <td class="font-semibold uppercase">{{ $item->perihal }}</td>
 
                                         <td class="flex space-x-2">
@@ -265,12 +269,12 @@
                     <div class="mt-4">
                         <label for="file" class="block mb-2 text-sm font-medium text-white">File:</label>
                         <input type="file" id="file" name="file" class="hidden"
-                            onchange="previewFile()">
+                            onchange="handleFileChange(event)">
                         <label id="file_label" for="file"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg cursor-pointer focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 text-center">
+                            class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg cursor-pointer focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 text-center">
                             Pilih File
                         </label>
-                        <!-- Area for preview -->
+                        <!-- Preview area -->
                         <div id="file_preview" class="mt-3"></div>
                         <span class="validated text-red-500 text-sm" id="file_error"></span>
                     </div>
@@ -283,25 +287,35 @@
                 </div>
             </form>
         </dialog>
-
         <script>
-            function previewFile() {
-                const fileInput = document.getElementById('file');
+            function handleFileChange(event) {
+                const fileInput = event.target;
                 const fileLabel = document.getElementById('file_label');
                 const filePreview = document.getElementById('file_preview');
+                const fileError = document.getElementById('file_error');
                 const file = fileInput.files[0];
-        
-                // Clear previous preview content
+
+                // Clear previous preview and error
                 filePreview.innerHTML = '';
-        
+                fileError.textContent = '';
+
                 if (file) {
                     const fileType = file.type;
                     const blobUrl = URL.createObjectURL(file);
-        
-                    // Update label with file name
-                    fileLabel.textContent = file.name;
-        
-                    // Determine file type and create appropriate preview
+                    const fileName = file.name;
+                    const fileSize = (file.size / 1024 / 1024).toFixed(2); // Convert size to MB
+
+                    // Update label with file name and size
+                    fileLabel.textContent = `${fileName} (${fileSize} MB)`;
+
+                    if (fileSize > 10) {
+                        fileError.textContent = 'File size exceeds 10 MB!';
+                        fileLabel.textContent = 'Pilih File';
+                        fileInput.value = ''; // Reset input
+                        return;
+                    }
+
+                    // Preview the file based on its type
                     if (fileType.startsWith('image/')) {
                         const img = document.createElement('img');
                         img.src = blobUrl;
@@ -323,19 +337,15 @@
                     } else {
                         // For unsupported file types
                         const info = document.createElement('p');
-                        info.textContent = `File dipilih: ${file.name}`;
+                        info.textContent = `File dipilih: ${fileName}`;
                         filePreview.appendChild(info);
                     }
-        
-                    // Reset the file input after handling preview to allow re-selection of the same file
-                    fileInput.value = '';
                 } else {
-                    // Reset if no file is selected
                     fileLabel.textContent = 'Pilih File';
                 }
             }
         </script>
-        
+
     </div>
 
 </x-dashboard.main>
