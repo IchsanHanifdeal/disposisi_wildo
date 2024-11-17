@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer('no_urut');
             $table->date('tanggal_masuk');
             $table->string('perihal');
-            $table->string('file');
+            $table->string('file')->nullable();
             $table->timestamps();
         });
     }

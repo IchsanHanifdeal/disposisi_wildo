@@ -86,9 +86,12 @@
                                         <td class="font-semibold uppercase">{{ $item->no_urut }}</td>
                                         <td class="font-semibold uppercase">{{ $item->tanggal_keluar }}</td>
                                         <td class="flex items-center">
-                                            <x-lucide-scan-eye class="size-5 hover:stroke-green-500 cursor-pointer"
+                                            <button type="button"
+                                                class="btn btn-primary w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary-focus focus:ring-offset-2 transition-all duration-300"
                                                 aria-label="Preview Proposal"
-                                                onclick="document.getElementById('preview_modal_{{ $item->id }}').showModal();" />
+                                                onclick="document.getElementById('preview_modal_{{ $item->id }}').showModal();">
+                                                Lihat
+                                            </button>
 
                                             <dialog id="preview_modal_{{ $item->id }}"
                                                 class="modal modal-bottom sm:modal-middle">
@@ -227,123 +230,118 @@
             </div>
         @endforeach
         <dialog id="tambah_proposal_modal" class="modal modal-bottom sm:modal-middle">
-            <form action="{{ route('store.proposal_keluar') }}" method="POST" enctype="multipart/form-data"
-                class="modal-box bg-base-100 text-white">
+            <form id="proposal_form" action="{{ route('store.proposal_keluar') }}" method="POST"
+                enctype="multipart/form-data" class="modal-box bg-base-100 text-white">
                 @csrf
                 <h3 class="modal-title capitalize text-white">Tambah Proposal</h3>
                 <div class="modal-body">
-                    @php
-                        $fields = [
-                            'no_urut' => [
-                                'type' => 'number',
-                                'label' => 'No Urut',
-                                'placeholder' => 'Masukkan No urut...',
-                            ],
-                            'tanggal' => [
-                                'type' => 'date',
-                                'label' => 'Tanggal',
-                                'placeholder' => 'Masukkan tanggal...',
-                            ],
-                            'perihal' => [
-                                'type' => 'text',
-                                'label' => 'Perihal',
-                                'placeholder' => 'Masukkan perihal...',
-                            ],
-                        ];
-                    @endphp
-
-                    @foreach ($fields as $field => $attributes)
-                        <div class="mt-4">
-                            <label for="{{ $field }}"
-                                class="block mb-2 text-sm font-medium text-white">{{ $attributes['label'] }}:</label>
-                            <input type="{{ $attributes['type'] }}" name="{{ $field }}"
-                                id="{{ $field }}" class="input input-bordered w-full text-white"
-                                placeholder="{{ $attributes['placeholder'] }}" required>
-                            @error($field)
-                                <span class="validated text-red-500 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    @endforeach
-
-                    <!-- File Input Section -->
+                    <!-- Input Fields -->
                     <div class="mt-4">
-                        <label for="file" class="block mb-2 text-sm font-medium text-white">File:</label>
-                        <input type="file" id="file" name="file" class="hidden"
-                            onchange="handleFileChange(event)">
-                        <label id="file_label" for="file"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg cursor-pointer focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 text-center">
-                            Pilih File
-                        </label>
-                        <!-- Preview area -->
-                        <div id="file_preview" class="mt-3"></div>
-                        <span class="validated text-red-500 text-sm" id="file_error"></span>
+                        <label for="no_urut" class="block mb-2 text-sm font-medium text-white">No Urut:</label>
+                        <input type="number" name="no_urut" id="no_urut"
+                            class="input input-bordered w-full text-white" placeholder="Masukkan No urut..." required>
+                        <span id="error_no_urut" class="validated text-red-500 text-sm"></span>
                     </div>
 
-                    <div class="modal-action">
-                        <button type="button" onclick="document.getElementById('tambah_proposal_modal').close()"
-                            class="btn btn-error capitalize">Batal</button>
-                        <button type="submit" class="btn btn-primary capitalize">Simpan</button>
+                    <div class="mt-4">
+                        <label for="tanggal" class="block mb-2 text-sm font-medium text-white">Tanggal:</label>
+                        <input type="date" name="tanggal" id="tanggal"
+                            class="input input-bordered w-full text-white" placeholder="Masukkan tanggal..." required>
+                        <span id="error_tanggal" class="validated text-red-500 text-sm"></span>
                     </div>
+
+                    <div class="mt-4">
+                        <label for="perihal" class="block mb-2 text-sm font-medium text-white">Perihal:</label>
+                        <input type="text" name="perihal" id="perihal"
+                            class="input input-bordered w-full text-white" placeholder="Masukkan perihal..." required>
+                        <span id="error_perihal" class="validated text-red-500 text-sm"></span>
+                    </div>
+
+                    <!-- File Input -->
+                    <div class="mt-4">
+                        <label for="file" class="block mb-2 text-sm font-medium text-white">File (PDF):</label>
+                        <input type="file" id="file" name="file"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg cursor-pointer focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 text-center"
+                            accept="application/pdf" onchange="handleFileChange(event)">
+                        <div id="file_preview" class="mt-3"></div>
+                        <span id="file_error" class="validated text-red-500 text-sm"></span>
+                    </div>
+
+                </div>
+
+                <div class="modal-action">
+                    <button type="button" onclick="document.getElementById('tambah_proposal_modal').close()"
+                        class="btn btn-error capitalize">Batal</button>
+                    <button type="submit" class="btn btn-primary capitalize">Simpan</button>
                 </div>
             </form>
         </dialog>
         <script>
-            function handleFileChange(event) {
-                const fileInput = event.target;
-                const fileLabel = document.getElementById('file_label');
+            document.addEventListener('DOMContentLoaded', function() {
+                const fileInput = document.getElementById('file');
                 const filePreview = document.getElementById('file_preview');
                 const fileError = document.getElementById('file_error');
-                const file = fileInput.files[0];
+                const fileLabel = document.getElementById('file_label');
+                const maxFileSizeMB = 2;
 
-                // Clear previous preview and error
-                filePreview.innerHTML = '';
-                fileError.textContent = '';
+                // Handle file input change
+                fileInput.addEventListener('change', function(event) {
+                    const file = event.target.files[0];
 
-                if (file) {
-                    const fileType = file.type;
-                    const blobUrl = URL.createObjectURL(file);
-                    const fileName = file.name;
-                    const fileSize = (file.size / 1024 / 1024).toFixed(2); // Convert size to MB
+                    // Reset preview and error message
+                    filePreview.innerHTML = '';
+                    fileError.textContent = '';
 
-                    // Update label with file name and size
-                    fileLabel.textContent = `${fileName} (${fileSize} MB)`;
+                    if (file) {
+                        // Validate file type
+                        if (file.type !== 'application/pdf') {
+                            fileError.textContent = 'File harus berupa PDF!';
+                            fileLabel.textContent = 'Pilih File'; // Reset label if error
+                            fileInput.value = ''; // Reset input value if invalid file
+                            return;
+                        }
 
-                    if (fileSize > 10) {
-                        fileError.textContent = 'File size exceeds 10 MB!';
-                        fileLabel.textContent = 'Pilih File';
-                        fileInput.value = ''; // Reset input
-                        return;
-                    }
+                        // Validate file size
+                        if (file.size > maxFileSizeMB * 1024 * 1024) {
+                            fileError.textContent = `Ukuran file terlalu besar! Maksimal ${maxFileSizeMB} MB.`;
+                            fileLabel.textContent = 'Pilih File'; // Reset label if error
+                            fileInput.value = ''; // Reset input value if invalid size
+                            return;
+                        }
 
-                    // Preview the file based on its type
-                    if (fileType.startsWith('image/')) {
-                        const img = document.createElement('img');
-                        img.src = blobUrl;
-                        img.alt = 'Preview Gambar';
-                        img.classList.add('w-full', 'h-auto', 'rounded-lg', 'mt-2');
-                        filePreview.appendChild(img);
-                    } else if (fileType.startsWith('application/pdf')) {
-                        const embed = document.createElement('embed');
-                        embed.src = blobUrl;
-                        embed.type = 'application/pdf';
-                        embed.classList.add('w-full', 'h-64', 'mt-2');
-                        filePreview.appendChild(embed);
-                    } else if (fileType.startsWith('video/')) {
-                        const video = document.createElement('video');
-                        video.src = blobUrl;
-                        video.controls = true;
-                        video.classList.add('w-full', 'h-auto', 'rounded-lg', 'mt-2');
-                        filePreview.appendChild(video);
+                        // Update label text to show selected file name
+                        fileLabel.textContent = `File: ${file.name}`;
+
+                        // Generate PDF preview
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            filePreview.innerHTML = `
+                    <iframe src="${e.target.result}" width="100%" height="400px"
+                        class="rounded-lg border border-gray-300"></iframe>
+                `;
+                        };
+                        reader.readAsDataURL(file);
                     } else {
-                        // For unsupported file types
-                        const info = document.createElement('p');
-                        info.textContent = `File dipilih: ${fileName}`;
-                        filePreview.appendChild(info);
+                        // Reset state if no file is selected
+                        fileError.textContent = 'Tidak ada file yang dipilih!';
+                        fileLabel.textContent = 'Pilih File';
                     }
-                } else {
-                    fileLabel.textContent = 'Pilih File';
-                }
-            }
+                });
+
+                // Reset label and error when file input is cleared manually
+                fileInput.addEventListener('click', function() {
+                    if (!fileInput.value) {
+                        fileError.textContent = '';
+                        fileLabel.textContent = 'Pilih File';
+                        filePreview.innerHTML = '';
+                    }
+                });
+
+                // Reset label on label click
+                fileLabel.addEventListener('click', function() {
+                    fileError.textContent = ''; // Reset error on label click
+                });
+            });
         </script>
 
     </div>

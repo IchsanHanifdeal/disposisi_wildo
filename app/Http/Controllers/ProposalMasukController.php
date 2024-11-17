@@ -31,36 +31,54 @@ class ProposalMasukController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'no_urut' => 'required|string|max:255', // Validate title
-            'tanggal' => 'required', // Validate title
-            'perihal' => 'required|string|max:255', // Validate title
+        // Validasi input
+        $validatedData = $request->validate([
+            'no_urut' => 'required|string|max:255', // Validasi no urut
+            'tanggal' => 'required|date', // Validasi tanggal
+            'perihal' => 'required|string|max:255', // Validasi perihal
+            'file' => 'nullable|file|mimes:pdf|max:2048', // Validasi file PDF, max 2MB (opsional)
         ]);
 
         DB::beginTransaction();
         try {
-            $proposal_masuk = new ProposalMasuk();
-            $proposal_masuk->no_urut = $request->no_urut;
-            $proposal_masuk->tanggal_masuk = $request->tanggal;
-            $proposal_masuk->perihal = $request->perihal;
+            // Membuat data proposal_masuk
+            $proposalMasuk = ProposalMasuk::create([
+                'no_urut' => $validatedData['no_urut'],
+                'tanggal_masuk' => $validatedData['tanggal'],
+                'perihal' => $validatedData['perihal'],
+            ]);
 
-            $proposal_masuk->save();
+            // Jika file diunggah, simpan file
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+
+                // Buat nama file unik dan simpan
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->storeAs('public/proposal_masuk', $filename); // Menyimpan file di storage
+
+                // Perbarui record dengan path file
+                $proposalMasuk->update([
+                    'file' => 'proposal_masuk/' . $filename, // Path file yang disimpan
+                ]);
+            }
+
             DB::commit();
 
-            // Set success flag in session
+            // Redirect dengan pesan sukses
             return redirect()->back()->with('toast', [
                 'message' => 'Proposal Masuk berhasil ditambahkan.',
                 'type' => 'success',
-                // 'playAudio' => true // Flag to play audio
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['file_materi' => $e->getMessage()])
-                ->withInput()
-                ->with('toast', [
-                    'message' => $e->getMessage(),
-                    'type' => 'error'
-                ]);
+
+            // Redirect kembali dengan pesan error
+            return redirect()->back()->withErrors([
+                'error' => $e->getMessage(),
+            ])->withInput()->with('toast', [
+                'message' => 'Gagal menambahkan Proposal Masuk: ' . $e->getMessage(),
+                'type' => 'error',
+            ]);
         }
     }
 

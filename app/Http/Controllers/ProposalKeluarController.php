@@ -31,52 +31,54 @@ class ProposalKeluarController extends Controller
      */
     public function store(Request $request)
     {
-        // Validasi input termasuk file
-        $request->validate([
+        // Validasi input
+        $validatedData = $request->validate([
             'no_urut' => 'required|string|max:255', // Validasi no urut
             'tanggal' => 'required|date', // Validasi tanggal (harus berupa tanggal)
             'perihal' => 'required|string|max:255', // Validasi perihal
-            'file' => 'nullable|file|mimes:pdf', // Validasi file (hanya PDF, max 2MB)
+            'file' => 'required|file|mimes:pdf|max:2048', // Validasi file PDF, max 2MB
         ]);
 
         DB::beginTransaction();
         try {
-            // Membuat instance ProposalKeluar baru
-            $proposal_keluar = new ProposalKeluar();
-            $proposal_keluar->no_urut = $request->no_urut;
-            $proposal_keluar->tanggal_keluar = $request->tanggal;
-            $proposal_keluar->perihal = $request->perihal;
+            // Membuat data proposal_keluar
+            $proposalKeluar = ProposalKeluar::create([
+                'no_urut' => $validatedData['no_urut'],
+                'tanggal_keluar' => $validatedData['tanggal'],
+                'perihal' => $validatedData['perihal'],
+            ]);
 
-            // Mengecek apakah file diunggah
+            // Jika file diunggah
             if ($request->hasFile('file')) {
-                // Mengambil file yang diunggah
                 $file = $request->file('file');
 
-                // Menentukan nama file dan path untuk menyimpan
+                // Buat nama file unik dan simpan
                 $filename = time() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('public/proposal_keluar', $filename); // Simpan ke direktori 'public/proposal_keluar'
+                $file->storeAs('public/proposal_keluar', $filename);
 
-                // Simpan path file ke database
-                $proposal_keluar->file = $filename; // Simpan nama file, bukan path penuh
+                // Perbarui record dengan path file
+                $proposalKeluar->update([
+                    'file' => $filename,
+                ]);
             }
 
-            // Simpan data proposal_keluar ke database
-            $proposal_keluar->save();
             DB::commit();
 
-            // Mengirim notifikasi sukses ke sesi
-            return redirect()->back()->with('toast', [
+            // Redirect dengan pesan sukses
+            return redirect()->route('proposal_keluar')->with('toast', [
                 'message' => 'Proposal Keluar berhasil ditambahkan.',
                 'type' => 'success',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['file_materi' => $e->getMessage()])
-                ->withInput()
-                ->with('toast', [
-                    'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
-                    'type' => 'error'
-                ]);
+
+            // Redirect kembali dengan error
+            return redirect()->back()->withInput()->withErrors([
+                'error' => $e->getMessage(),
+            ])->with('toast', [
+                'message' => 'Gagal menambahkan Proposal Keluar: ' . $e->getMessage(),
+                'type' => 'error',
+            ]);
         }
     }
 

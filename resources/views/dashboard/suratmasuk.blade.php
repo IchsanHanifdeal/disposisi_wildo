@@ -73,7 +73,7 @@
                         <table class="table w-full text-gray-300">
                             <thead>
                                 <tr class="bg-base-300">
-                                    @foreach (['No', 'No Urut', 'Tanggal', 'Jenis Surat', 'Tujuan', 'Perihal', 'Aksi'] as $header)
+                                    @foreach (['No', 'No Urut', 'Tanggal', 'File', 'Jenis Surat', 'Tujuan', 'Perihal', 'Aksi'] as $header)
                                         <th class="uppercase font-bold text-gray-400">{{ $header }}</th>
                                     @endforeach
                                 </tr>
@@ -84,6 +84,34 @@
                                         <th class="font-semibold text-gray-300">{{ $i + 1 }}</th>
                                         <td class="font-semibold uppercase">{{ $item->no_urut }}</td>
                                         <td class="font-semibold uppercase">{{ $item->tanggal_masuk }}</td>
+                                        <td class="flex items-center">
+                                            <button type="button"
+                                                class="btn btn-primary w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary-focus focus:ring-offset-2 transition-all duration-300"
+                                                aria-label="Preview Proposal"
+                                                onclick="document.getElementById('preview_modal_{{ $item->id }}').showModal();">
+                                                Lihat
+                                            </button>
+
+                                            <dialog id="preview_modal_{{ $item->id }}"
+                                                class="modal modal-bottom sm:modal-middle">
+                                                <div class="modal-box bg-neutral text-white">
+                                                    <h3 class="text-lg font-bold" id="modal-title">{{ $item->no_urut }}
+                                                    </h3>
+                                                    <div
+                                                        class="flex flex-col w-full mt-3 rounded-lg overflow-hidden h-96">
+                                                        <embed
+                                                            src="{{ asset('storage/' . $item->file) }}"
+                                                            type="application/pdf" class="w-full h-full" />
+
+                                                    </div>
+                                                    <div class="modal-action">
+                                                        <button type="button"
+                                                            onclick="document.getElementById('preview_modal_{{ $item->id }}').close()"
+                                                            class="btn">Tutup</button>
+                                                    </div>
+                                                </div>
+                                            </dialog>
+                                        </td>
                                         <td class="font-semibold uppercase">{{ $item->jenis_surat }}</td>
                                         <td class="font-semibold uppercase">{{ $item->tujuan }}</td>
                                         <td class="font-semibold uppercase">{{ $item->perihal }}</td>
@@ -170,6 +198,7 @@
                                                                 @enderror
                                                             </div>
                                                         @endforeach
+
                                                         <div class="modal-action">
                                                             <button type="button"
                                                                 onclick="document.getElementById('update_modal_{{ $item->id }}').close()"
@@ -257,6 +286,16 @@
                             @enderror
                         </div>
                     @endforeach
+
+                    <div class="mt-4">
+                        <label for="file" class="block mb-2 text-sm font-medium text-white">File (PDF):</label>
+                        <input type="file" id="file" name="file"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg cursor-pointer focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 text-center"
+                            accept="application/pdf" onchange="handleFileChange(event)">
+                        <div id="file_preview" class="mt-3"></div>
+                        <span id="file_error" class="validated text-red-500 text-sm"></span>
+                    </div>
+
                     <div class="modal-action">
                         <button type="button" onclick="document.getElementById('{{ $item }}_modal').close()"
                             class="btn btn-error capitalize">Batal</button>
@@ -266,5 +305,73 @@
             </form>
         </dialog>
     @endforeach
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('file');
+            const filePreview = document.getElementById('file_preview');
+            const fileError = document.getElementById('file_error');
+            const fileLabel = document.getElementById('file_label');
+            const maxFileSizeMB = 2;
+
+            // Handle file input change
+            fileInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+
+                // Reset preview and error message
+                filePreview.innerHTML = '';
+                fileError.textContent = '';
+
+                if (file) {
+                    // Validate file type
+                    if (file.type !== 'application/pdf') {
+                        fileError.textContent = 'File harus berupa PDF!';
+                        fileLabel.textContent = 'Pilih File'; // Reset label if error
+                        fileInput.value = ''; // Reset input value if invalid file
+                        return;
+                    }
+
+                    // Validate file size
+                    if (file.size > maxFileSizeMB * 1024 * 1024) {
+                        fileError.textContent = `Ukuran file terlalu besar! Maksimal ${maxFileSizeMB} MB.`;
+                        fileLabel.textContent = 'Pilih File'; // Reset label if error
+                        fileInput.value = ''; // Reset input value if invalid size
+                        return;
+                    }
+
+                    // Update label text to show selected file name
+                    fileLabel.textContent = `File: ${file.name}`;
+
+                    // Generate PDF preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        filePreview.innerHTML = `
+                <iframe src="${e.target.result}" width="100%" height="400px"
+                    class="rounded-lg border border-gray-300"></iframe>
+            `;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    // Reset state if no file is selected
+                    fileError.textContent = 'Tidak ada file yang dipilih!';
+                    fileLabel.textContent = 'Pilih File';
+                }
+            });
+
+            // Reset label and error when file input is cleared manually
+            fileInput.addEventListener('click', function() {
+                if (!fileInput.value) {
+                    fileError.textContent = '';
+                    fileLabel.textContent = 'Pilih File';
+                    filePreview.innerHTML = '';
+                }
+            });
+
+            // Reset label on label click
+            fileLabel.addEventListener('click', function() {
+                fileError.textContent = ''; // Reset error on label click
+            });
+        });
+    </script>
 
 </x-dashboard.main>

@@ -31,16 +31,19 @@ class SuratMasukController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'no_urut' => 'required|string|max:255', // Validate title
-            'tanggal_masuk' => 'required', // Validate title
-            'jenis_surat' => 'required|string|max:255', // Validate title
-            'tujuan' => 'required|string|max:255', // Validate title
-            'perihal' => 'required|string|max:255', // Validate title
+        // Validasi input
+        $validatedData = $request->validate([
+            'no_urut' => 'required|string|max:255', // Validasi no urut
+            'tanggal_masuk' => 'required|date', // Validasi tanggal masuk
+            'jenis_surat' => 'required|string|max:255', // Validasi jenis surat
+            'tujuan' => 'required|string|max:255', // Validasi tujuan
+            'perihal' => 'required|string|max:255', // Validasi perihal
+            'file' => 'nullable|file|mimes:pdf|max:2048', // Validasi file PDF, max 2MB
         ]);
 
         DB::beginTransaction();
         try {
+            // Membuat data surat_masuk
             $surat_masuk = new SuratMasuk();
             $surat_masuk->no_urut = $request->no_urut;
             $surat_masuk->tanggal_masuk = $request->tanggal_masuk;
@@ -48,25 +51,47 @@ class SuratMasukController extends Controller
             $surat_masuk->tujuan = $request->tujuan;
             $surat_masuk->perihal = $request->perihal;
 
+            // Simpan data surat_masuk ke database
             $surat_masuk->save();
+
+            // Jika ada file yang diunggah
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+
+                // Buat nama file unik dan simpan
+                $filename = time() . '_' . $file->getClientOriginalName();
+                // Menyimpan file di folder public/surat_masuk
+                $file->storeAs('public/surat_masuk', $filename);
+
+                // Perbarui record dengan path file
+                $surat_masuk->update([
+                    'file' => 'surat_masuk/' . $filename, // Menyimpan path file
+                ]);
+            }
+
+            // Commit transaksi
             DB::commit();
 
-            // Set success flag in session
+            // Redirect dengan pesan sukses
             return redirect()->back()->with('toast', [
                 'message' => 'Surat Masuk berhasil ditambahkan.',
                 'type' => 'success',
-                'playAudio' => true // Flag to play audio
+                'playAudio' => true, // Flag to play audio
             ]);
         } catch (\Exception $e) {
+            // Rollback transaksi jika terjadi error
             DB::rollBack();
+
+            // Redirect kembali dengan pesan error
             return redirect()->back()->withErrors(['file_materi' => $e->getMessage()])
                 ->withInput()
                 ->with('toast', [
-                    'message' => $e->getMessage(),
-                    'type' => 'error'
+                    'message' => 'Gagal menambahkan Surat Masuk: ' . $e->getMessage(),
+                    'type' => 'error',
                 ]);
         }
     }
+
 
 
     /**

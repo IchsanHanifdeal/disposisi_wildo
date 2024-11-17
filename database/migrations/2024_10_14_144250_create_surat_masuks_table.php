@@ -18,7 +18,7 @@ return new class extends Migration
             $table->enum('jenis_surat', ['undangan', 'permohonan', 'pemberitahuan']);
             $table->string('tujuan');
             $table->string('perihal');
-            $table->string('file');
+            $table->string('file')->nullable();
             $table->timestamps();
         });
     }
